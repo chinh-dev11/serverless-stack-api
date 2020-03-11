@@ -22,6 +22,7 @@ provider:
   #
   environment:
     tableName: ${env:AWS_DYNAMODB_TABLE_NAME}
+    stripeSecretKey: ${env:STRIPE_SECRET_KEY}
   # 'iamRoleStatements' defines the permission policy for the Lambda function.
   # In this case Lambda functions are granted with permissions to access DynamoDB.
   iamRoleStatements:
@@ -84,3 +85,15 @@ functions:
           method: put
           cors: true
           authorizer: aws_iam
+  # Defines an HTTP API endpoint that calls the main function in delete.js
+  # - path: url path is /notes/{id}
+  # - method: DELETE request          
+  delete:
+    handler: delete.main
+    events:
+      - http:
+          path: notes/{id}
+          method: delete
+          cors: true
+          authorizer: aws_iam
+  
