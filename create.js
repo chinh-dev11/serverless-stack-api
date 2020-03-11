@@ -1,10 +1,19 @@
+/**
+ * Refactor the code
+ *  - helper functions
+ *      - responses (success, fail) in ./libs/response-lib.js
+ *      - dynambodb in ./libs/dynamodb-lib.js
+ *  - We are also using the async/await pattern here to refactor our Lambda function. This allows us to return once we are done processing; instead of using the callback function.
+ */
 // import uuid from "uuid"; // “TypeError: Cannot read property ‘v1’ of undefined”
 import { v1 as uuidv1 } from "uuid"; // Fix: for v7+
-import AWS from "aws-sdk";
+// import AWS from "aws-sdk";
+import * as dynamoDbLib from "./libs/dynamodb-lib";
+import { success, failure } from "./libs/response-lib";
 
-const dynamoDb = new AWS.DynamoDB.DocumentClient();
+// const dynamoDb = new AWS.DynamoDB.DocumentClient();
 
-export function main(event, context, callback) {
+export async function main(event, context, callback) {
   // Request body is passed in as a JSON encoded string in 'event.body'
   const data = JSON.parse(event.body);
 
@@ -28,30 +37,10 @@ export function main(event, context, callback) {
     }
   };
 
-  dynamoDb.put(params, (error, data) => {
-    // Set response headers to enable CORS (Cross-Origin Resource Sharing)
-    const headers = {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Credentials": true
-    };
-
-    // Return status code 500 on error
-    if (error) {
-      const response = {
-        statusCode: 500,
-        headers: headers,
-        body: JSON.stringify({ status: false })
-      };
-      callback(null, response);
-      return;
-    }
-
-    // Return status code 200 and the newly created item
-    const response = {
-      statusCode: 200,
-      headers: headers,
-      body: JSON.stringify(params.Item)
-    };
-    callback(null, response);
-  });
+  try {
+      await dynamoDbLib.call("put", params);
+      return success(params.Item);
+  } catch(err) {
+      return failure({status: false});
+  }
 }
