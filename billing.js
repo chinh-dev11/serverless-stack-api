@@ -11,7 +11,8 @@ export async function main(event, context){
     const stripe = stripePackage(process.env.stripeSecretKey);
 
     try{
-        const result = await stripe.charges.create({
+        // const result = await stripe.charges.create({
+        await stripe.charges.create({
             source,
             amount,
             description,
