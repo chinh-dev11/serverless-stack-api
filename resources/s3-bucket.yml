@@ -1,0 +1,25 @@
+Resources:
+    AttachmentsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        ## Set the CORS policy
+        CorsConfiguration:
+          CorsRules:
+            -
+              AllowedOrigins:
+                - '*'
+              AllowedHeaders:
+                - '*'
+              AllowedMethods:
+                - GET
+                - PUT
+                - POST
+                - DELETE
+                - HEAD
+              MaxAge: 3000
+  
+## S3 buckets (unlike DynamoDB tables) are globally named, so it is not really possible for us to know what our bucket is going to be called beforehand. Hence, we let CloudFormation generate the name for us and we just add the Outputs: block to tell it to print it out so we can use it later.
+Outputs:
+    AttachmentsBucketName:
+        Value:
+            Ref: AttachmentsBucket
