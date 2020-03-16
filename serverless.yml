@@ -1,7 +1,9 @@
-# NOTE: update this with your service name
-service: notes-app-api
+## Project created/used with AWS Console
+# service: notes-app-api
+## Project created with IaC (Infrastructure as Code)
+service: notes-app-api-iac
 
-# Create an optimized package for our functions 
+## Create an optimized package for our functions 
 package:
   individually: true # telling Lambda to create single package per function. this will slow down the build but perf benefit is well worth it
 
@@ -10,21 +12,27 @@ plugins:
   - serverless-offline # to run backend API locally
   - serverless-dotenv-plugin # Load .env as environment variables
 
+custom:
+  ## Our stage is based on what is passed in when running serverless commands (e.g $ serverless deploy --stage dev).
+  ## Or falls back to what we have set in the provider section.
+  stage: ${opt:stage, self:provider.stage}
+  ## Set the table name here so we can use it while testing locally
+  tableName: serverless-stack-${self:custom.stage}-notes
+  
+## AWS
 provider:
   name: aws
   runtime: nodejs10.x
-  stage: prod
+  stage: dev
   region: us-east-1
-  # To load environment variables externally
-  # rename env.example to .env and uncomment
-  # the following line. Also, make sure to not
-  # commit your .env.
-  #
+  ## 'environment:' serves to tell Serverless Framework to make the variables available as process.env in Lambda functions
+  ## Make sure to not commit your .env.
   environment:
-    tableName: ${env:AWS_DYNAMODB_TABLE_NAME}
+    # tableName: ${env:AWS_DYNAMODB_TABLE_NAME}
+    tableName: ${self:custom.tableName}
     stripeSecretKey: ${env:STRIPE_SECRET_KEY}
-  # 'iamRoleStatements' defines the permission policy for the Lambda function.
-  # In this case Lambda functions are granted with permissions to access DynamoDB.
+  ## 'iamRoleStatements' defines the permission policy for the Lambda function.
+  ## In this case Lambda functions are granted with permissions to access DynamoDB.
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -35,8 +43,13 @@ provider:
         - dynamodb:PutItem
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
-      Resource: "arn:aws:dynamodb:us-east-1:*:*"
+      ## Restrict our IAM role permissions to the specific table for the stage
+      ## The following resources are the only ones that Lambda functions have access to
+      # Resource: "arn:aws:dynamodb:us-east-1:*:*"
+      Resource:
+        - "Fn::GetAtt": [ NotesTable, Arn ] ## stating which table we want to connect to
 
+## Lambda functions and API Endpoints
 functions:
   # Defines an HTTP API endpoint that calls the main function in create.js
   # - path: url path is /notes
@@ -108,7 +121,14 @@ functions:
           cors: true
           authorizer: aws_iam
 
-# Create our resources with separate CloudFormation templates
+## Create our resources with separate CloudFormation templates
 resources:
-  # API Gateway Errors
+  ## API Gateway Errors
   - ${file(resources/api-gateway-errors.yml)}
+  ## DynamoDB
+  - ${file(resources/dynamodb-table.yml)}
+  ## S3 - storage
+  - ${file(resources/s3-bucket.yml)}
+  ## Cognito
+  - ${file(resources/cognito-user-pool.yml)}
+  - ${file(resources/cognito-identity-pool.yml)}
