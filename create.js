@@ -6,7 +6,7 @@
  *  - We are also using the async/await pattern here to refactor our Lambda function. This allows us to return once we are done processing; instead of using the callback function.
  */
 // import uuid from "uuid"; // “TypeError: Cannot read property ‘v1’ of undefined”
-import { v1 as uuidv1 } from "uuid"; // Fix: for v7+
+import uuid, { v1 as uuidv1 } from "uuid"; // Fix: for v7+
 // import AWS from "aws-sdk";
 import * as dynamoDbLib from "./libs/dynamodb-lib";
 import { success, failure } from "./libs/response-lib";
@@ -14,6 +14,7 @@ import { success, failure } from "./libs/response-lib";
 // const dynamoDb = new AWS.DynamoDB.DocumentClient();
 
 export async function main(event, context, callback) {
+  uuid.abc.gibberish; // monitoring deployments in Seed / push some faulty code
   // Request body is passed in as a JSON encoded string in 'event.body'
   const data = JSON.parse(event.body);
 
